@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:viet_wander/domain/entities/province.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_controller.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_state.dart';
+import 'package:viet_wander/app/utils/formatters.dart';
 import 'info_table_widget.dart';
 
 class ProvinceDetailView extends StatelessWidget {
@@ -58,7 +59,7 @@ class ProvinceDetailView extends StatelessWidget {
                 population: province.population,
                 density: province.density,
                 addressTitle: 'Trụ sở',
-                addressData: province.capital,
+                addressData: province.address,
               ),
             ],
           ),
@@ -87,7 +88,9 @@ class ProvinceDetailView extends StatelessWidget {
                   commune.ten,
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
-                subtitle: Text('Dân số: ${commune.population} người'),
+                subtitle: Text(
+                  'Dân số: ${Formatters.formatNumber(commune.population)} người',
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                 onTap: () => controller.selectCommuneByMa(commune.ma),
               );

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_controller.dart';
 
-import 'data_panel_views/search_results_view.dart';
-import 'data_panel_views/province_detail_view.dart';
-import 'data_panel_views/commune_detail_view.dart';
+import 'views/search_results_view.dart';
+import 'views/province_detail_view.dart';
+import 'views/commune_detail_view.dart';
 
 class DataPanel extends ConsumerStatefulWidget {
   const DataPanel({super.key});
@@ -33,13 +33,24 @@ class _DataPanelState extends ConsumerState<DataPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'THỐNG KÊ ĐỊA LÝ',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-            ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'THỐNG KÊ ĐỊA LÝ',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -67,6 +78,7 @@ class _DataPanelState extends ConsumerState<DataPanel> {
                 : state.selectedCommune != null
                 ? CommuneDetailView(
                     commune: state.selectedCommune!,
+                    state: state,
                     controller: controller,
                   )
                 : state.selectedProvince != null

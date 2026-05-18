@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:viet_wander/app/utils/formatters.dart';
 
 class InfoTableWidget extends StatelessWidget {
   final double area;
@@ -6,6 +7,7 @@ class InfoTableWidget extends StatelessWidget {
   final double density;
   final String addressTitle;
   final String addressData;
+  final String? provinceName;
 
   const InfoTableWidget({
     super.key,
@@ -14,6 +16,7 @@ class InfoTableWidget extends StatelessWidget {
     required this.density,
     required this.addressTitle,
     required this.addressData,
+    this.provinceName,
   });
 
   TableRow _buildTableRow(String label, String value) {
@@ -49,16 +52,25 @@ class InfoTableWidget extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Table(
-        columnWidths: const {0: FlexColumnWidth(4), 1: FlexColumnWidth(6)},
+        columnWidths: const {0: FlexColumnWidth(4.5), 1: FlexColumnWidth(5.5)},
         border: TableBorder(
           horizontalInside: BorderSide(
             color: Colors.white.withValues(alpha: 0.1),
           ),
         ),
         children: [
-          _buildTableRow('Diện tích (km²)', area.toStringAsFixed(2)),
-          _buildTableRow('Dân số (người)', population.toString()),
-          _buildTableRow('Mật độ (người/km²)', density.toStringAsFixed(2)),
+          if (provinceName != null && provinceName!.isNotEmpty)
+            _buildTableRow('Tỉnh thành', provinceName!),
+
+          _buildTableRow(
+            'Diện tích (km²)',
+            Formatters.formatNumber(area, fractionDigits: 2),
+          ),
+          _buildTableRow('Dân số (người)', Formatters.formatNumber(population)),
+          _buildTableRow(
+            'Mật độ (người/km²)',
+            Formatters.formatNumber(density, fractionDigits: 2),
+          ),
           _buildTableRow(addressTitle, addressData),
         ],
       ),

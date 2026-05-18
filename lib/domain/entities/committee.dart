@@ -2,6 +2,7 @@ class Committee {
   final String id;
   final String ma;
   final String parentMa;
+  final String parentTen;
   final String ten;
   final String type;
   final double centroidLon;
@@ -12,6 +13,7 @@ class Committee {
     required this.id,
     required this.ma,
     required this.parentMa,
+    required this.parentTen,
     required this.ten,
     required this.type,
     required this.centroidLon,

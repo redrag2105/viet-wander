@@ -13,6 +13,9 @@ class MapStatsState {
   final List<Commune> communes;
   final List<Committee> committees;
   final bool isDetailMode;
+  final bool isSidebarOpen;
+  final double sidebarWidth;
+  final bool isDragging;
 
   MapStatsState({
     this.isLoading = true,
@@ -25,6 +28,9 @@ class MapStatsState {
     this.communes = const [],
     this.committees = const [],
     this.isDetailMode = false,
+    this.isSidebarOpen = true,
+    this.sidebarWidth = 420.0,
+    this.isDragging = false,
   });
 
   MapStatsState copyWith({
@@ -40,6 +46,9 @@ class MapStatsState {
     List<Commune>? communes,
     List<Committee>? committees,
     bool? isDetailMode,
+    bool? isSidebarOpen,
+    double? sidebarWidth,
+    bool? isDragging,
   }) {
     return MapStatsState(
       isLoading: isLoading ?? this.isLoading,
@@ -56,6 +65,9 @@ class MapStatsState {
       communes: communes ?? this.communes,
       committees: committees ?? this.committees,
       isDetailMode: isDetailMode ?? this.isDetailMode,
+      isSidebarOpen: isSidebarOpen ?? this.isSidebarOpen,
+      sidebarWidth: sidebarWidth ?? this.sidebarWidth,
+      isDragging: isDragging ?? this.isDragging,
     );
   }
 }

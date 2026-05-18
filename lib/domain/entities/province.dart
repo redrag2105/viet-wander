@@ -8,6 +8,7 @@ class Province {
   final int population;
   final double density;
   final String capital;
+  final String address;
   final String decree;
   final double centroidLat;
   final double centroidLon;
@@ -23,6 +24,7 @@ class Province {
     required this.population,
     required this.density,
     required this.capital,
+    required this.address,
     required this.decree,
     required this.centroidLat,
     required this.centroidLon,

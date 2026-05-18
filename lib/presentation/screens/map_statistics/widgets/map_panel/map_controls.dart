@@ -76,7 +76,7 @@ class MapThemeToggle extends StatelessWidget {
             return RotationTransition(
               turns: child.key == const ValueKey('icon_dark')
                   ? Tween<double>(begin: 0.5, end: 0).animate(animation)
-                  : Tween<double>(begin: 0, end: 0.51).animate(animation),
+                  : Tween<double>(begin: 0, end: 0.5).animate(animation),
               child: ScaleTransition(scale: animation, child: child),
             );
           },

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:tiengviet/tiengviet.dart';
 import 'package:viet_wander/data/providers/local/local_data.dart';
+import 'package:viet_wander/domain/entities/commune.dart';
 import 'package:viet_wander/domain/entities/province.dart';
 import 'package:viet_wander/domain/entities/committee.dart';
 import 'map_stats_state.dart';
@@ -28,6 +29,27 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       filteredCommunes: repo.getAllCommunes().take(50).toList(),
       filteredCommittees: repo.getAllCommittees().take(50).toList(),
     );
+  }
+
+  void toggleSidebar() {
+    state = state.copyWith(isSidebarOpen: !state.isSidebarOpen);
+  }
+
+  void openSidebar() {
+    state = state.copyWith(isSidebarOpen: true);
+  }
+
+  void closeSidebar() {
+    state = state.copyWith(isSidebarOpen: false);
+  }
+
+  // Hàm cập nhật state kéo
+  void updateDragging(bool isDragging) {
+    state = state.copyWith(isDragging: isDragging);
+  }
+
+  void updateSidebarWidth(double width) {
+    state = state.copyWith(sidebarWidth: width);
   }
 
   void searchData(String query) {
@@ -108,17 +130,31 @@ class MapStatsController extends StateNotifier<MapStatsState> {
   void selectCommuneFromCommittee(Committee c) {
     try {
       final repo = _ref.read(mapRepositoryProvider);
-      final allCommunes = repo.getAllCommunes();
 
-      final commune = allCommunes.firstWhere((commune) {
-        if (commune.parentMa != c.parentMa) return false;
+      final province = state.provinces.firstWhere(
+        (p) =>
+            (c.parentMa.isNotEmpty && p.ma == c.parentMa) ||
+            p.ten == c.parentTen,
+      );
 
+      final provinceCommunes = repo.getCommunesByProvince(province.ma);
+
+      final commune = provinceCommunes.firstWhere((commune) {
         return c.ten.toLowerCase().contains(commune.ten.toLowerCase());
       });
 
       selectCommuneByMa(commune.ma);
     } catch (e) {
-      selectProvinceByMa(c.parentMa);
+      try {
+        final province = state.provinces.firstWhere(
+          (p) =>
+              (c.parentMa.isNotEmpty && p.ma == c.parentMa) ||
+              p.ten == c.parentTen,
+        );
+        selectProvinceByMa(province.ma);
+      } catch (_) {
+        resetToListView();
+      }
     }
   }
 
@@ -134,15 +170,24 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       final allCommunes = repo.getAllCommunes();
       final commune = allCommunes.firstWhere((c) => c.ma == ma);
 
-      var currentCommittees = state.committees;
-      if (currentCommittees.isEmpty ||
-          currentCommittees.first.parentMa != commune.parentMa) {
-        currentCommittees = repo.getCommitteesByProvince(commune.parentMa);
+      Province? currentProvince = state.selectedProvince;
+      List<Commune> currentCommunesList = state.communes;
+      List<Committee> currentCommitteesList = state.committees;
+
+      if (currentProvince?.ma != commune.parentMa) {
+        // Lấy thông tin Tỉnh mới và update toàn bộ danh sách liên quan
+        currentProvince = state.provinces.firstWhere(
+          (p) => p.ma == commune.parentMa,
+        );
+        currentCommunesList = repo.getCommunesByProvince(commune.parentMa);
+        currentCommitteesList = repo.getCommitteesByProvince(commune.parentMa);
       }
 
       state = state.copyWith(
+        selectedProvince: currentProvince,
         selectedCommune: commune,
-        committees: currentCommittees,
+        communes: currentCommunesList,
+        committees: currentCommitteesList,
         isDetailMode: true,
       );
     } catch (e) {

@@ -7,7 +7,7 @@ import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_st
 import 'package:viet_wander/app/utils/geojson_helper.dart';
 
 class MapLayerBuilders {
-  // --- 1. BUILD LABELS (TÊN TỈNH) ---
+  // --- PROVINCE LABELS ---
   static List<Marker> buildProvinceLabels(
     MapStatsState state,
     double currentZoom,
@@ -15,7 +15,7 @@ class MapLayerBuilders {
   ) {
     if (currentZoom >= 11 || state.provinces.isEmpty) return [];
 
-    return state.provinces
+    final markers = state.provinces
         .where((p) {
           if (currentZoom <= 7.0) {
             return const [
@@ -83,47 +83,100 @@ class MapLayerBuilders {
           );
         })
         .toList();
+
+    // Thêm Đặc khu Hoàng Sa & Trường Sa ("same level as 7 major provinces")
+    markers.add(
+      Marker(
+        point: const LatLng(16.3713479, 112.0785779),
+        width: 150,
+        height: 50,
+        alignment: Alignment.center,
+        child: Text(
+          'QĐ. HOÀNG SA',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            color: isDarkMode
+                ? const Color(0xFFDA5C5C)
+                : const Color(0xFFAB0A0A),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            shadows: _getTextHalo(isDarkMode),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+
+    markers.add(
+      Marker(
+        point: const LatLng(9.2886592, 113.9755647),
+        width: 150,
+        height: 50,
+        alignment: Alignment.center,
+        child: Text(
+          'QĐ. TRƯỜNG SA',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            color: isDarkMode
+                ? const Color(0xFFDA5C5C)
+                : const Color(0xFFAB0A0A),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            shadows: _getTextHalo(isDarkMode),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+
+    return markers;
   }
 
-  // --- 2. BUILD MARKERS (CHẤM ĐỎ UBND) ---
-  static List<Marker> buildCommitteeMarkers(MapStatsState state) {
-    if (!state.isDetailMode ||
-        state.committees.isEmpty ||
-        state.selectedCommune == null) {
+  // --- COMMUNE LABELS ---
+  static List<Marker> buildCommuneLabels(
+    MapStatsState state,
+    double currentZoom,
+    bool isDarkMode,
+    List<BasePolygon>? communePolygons,
+  ) {
+    if (currentZoom < 11 || communePolygons == null) {
       return [];
     }
 
-    // Only show committee for the selected commune. We match by comparing the names.
-    final targetCommuneName = state.selectedCommune!.ten.toLowerCase();
+    final List<Marker> markers = [];
+    final Set<String> processedMa =
+        {}; // Dùng Set để tránh hiện tên nhiều lần cho MultiPolygon
 
-    // Tìm committee phù hợp (Ủy ban nhân dân Xã X có chứa chữ Xã X)
-    final matchedCommittees = state.committees.where((c) {
-      return c.ten.toLowerCase().contains(targetCommuneName);
-    }).toList();
+    for (var poly in communePolygons) {
+      if (poly.ten.isNotEmpty && !processedMa.contains(poly.ma)) {
+        processedMa.add(poly.ma);
+        final communeName = poly.ten;
 
-    return matchedCommittees.map((Committee committee) {
-      return Marker(
-        point: LatLng(committee.centroidLat, committee.centroidLon),
-        width: 12,
-        height: 12,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.redAccent.withValues(alpha: 0.5),
-                blurRadius: 4,
+        markers.add(
+          Marker(
+            point: poly.centroid,
+            width: 120,
+            height: 30,
+            alignment: Alignment.center,
+            child: Text(
+              communeName,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.black87,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                shadows: _getTextHalo(isDarkMode),
               ),
-            ],
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
           ),
-        ),
-      );
-    }).toList();
+        );
+      }
+    }
+    return markers;
   }
 
-  // --- HÀM PHỤ TRỢ UI CHO LABELS ---
   static List<Shadow> _getTextHalo(bool isDarkMode) {
     final Color haloColor = isDarkMode ? Colors.black87 : Colors.white;
     return [
@@ -173,48 +226,45 @@ class MapLayerBuilders {
     );
   }
 
-  // --- 3. BUILD COMMUNE LABELS ---
-  static List<Marker> buildCommuneLabels(
-    MapStatsState state,
-    double currentZoom,
-    bool isDarkMode,
-    List<BasePolygon>? communePolygons,
-  ) {
-    if (currentZoom < 11 || communePolygons == null) {
+  // --- BUILD MARKERS (CHẤM ĐỎ UBND) ---
+  static List<Marker> buildCommitteeMarkers(MapStatsState state) {
+    if (!state.isDetailMode ||
+        state.committees.isEmpty ||
+        state.selectedCommune == null) {
       return [];
     }
 
-    final List<Marker> markers = [];
-    final Set<String> processedMa =
-        {}; // Dùng Set để tránh hiện tên nhiều lần cho MultiPolygon
+    final targetCommuneName = state.selectedCommune!.ten.toLowerCase().trim();
 
-    for (var poly in communePolygons) {
-      if (poly.ten.isNotEmpty && !processedMa.contains(poly.ma)) {
-        processedMa.add(poly.ma);
-        final communeName = poly.ten;
+    final matchedCommittees = state.committees.where((c) {
+      final cleanCommitteeName = c.ten
+          .toLowerCase()
+          .replaceAll('ủy ban nhân dân', '')
+          .replaceAll('ubnd', '')
+          .trim();
 
-        markers.add(
-          Marker(
-            point: poly.centroid,
-            width: 120,
-            height: 30,
-            alignment: Alignment.center,
-            child: Text(
-              communeName,
-              style: TextStyle(
-                color: isDarkMode ? Colors.white70 : Colors.black87,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                shadows: _getTextHalo(isDarkMode),
+      return cleanCommitteeName == targetCommuneName;
+    }).toList();
+
+    return matchedCommittees.map((Committee committee) {
+      return Marker(
+        point: LatLng(committee.centroidLat, committee.centroidLon),
+        width: 12,
+        height: 12,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.redAccent,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withValues(alpha: 0.5),
+                blurRadius: 4,
               ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
+            ],
           ),
-        );
-      }
-    }
-    return markers;
+        ),
+      );
+    }).toList();
   }
 }
