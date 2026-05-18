@@ -180,14 +180,8 @@ class MapLayerBuilders {
     bool isDarkMode,
     List<BasePolygon>? communePolygons,
   ) {
-    if (currentZoom < 11 || state.communes.isEmpty || communePolygons == null) {
+    if (currentZoom < 11 || communePolygons == null) {
       return [];
-    }
-
-    // Build a map of ma -> name for O(1) lookup
-    final communeNameMap = <String, String>{};
-    for (var commune in state.communes) {
-      communeNameMap[commune.ma] = commune.ten;
     }
 
     final List<Marker> markers = [];
@@ -195,10 +189,9 @@ class MapLayerBuilders {
         {}; // Dùng Set để tránh hiện tên nhiều lần cho MultiPolygon
 
     for (var poly in communePolygons) {
-      if (communeNameMap.containsKey(poly.ma) &&
-          !processedMa.contains(poly.ma)) {
+      if (poly.ten.isNotEmpty && !processedMa.contains(poly.ma)) {
         processedMa.add(poly.ma);
-        final communeName = communeNameMap[poly.ma]!;
+        final communeName = poly.ten;
 
         markers.add(
           Marker(

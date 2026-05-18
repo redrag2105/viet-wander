@@ -5,10 +5,11 @@ import 'package:latlong2/latlong.dart';
 
 class BasePolygon {
   final String ma;
+  final String ten;
   final List<LatLng> points;
   late final LatLng centroid;
 
-  BasePolygon({required this.ma, required this.points}) {
+  BasePolygon({required this.ma, required this.points, this.ten = ''}) {
     if (points.isEmpty) {
       centroid = const LatLng(0, 0);
     } else {
@@ -116,16 +117,23 @@ class GeoJsonHelper {
           properties['id']?.toString() ??
           properties['ten']?.toString() ??
           '0';
+      final String tenStr = properties['ten']?.toString() ?? '';
 
       if (type == 'MultiPolygon') {
         for (var polygonCoords in coordinates) {
           polygons.add(
-            BasePolygon(ma: codeStr, points: _createPoints(polygonCoords[0])),
+            BasePolygon(
+              ma: codeStr,
+              ten: tenStr,
+              points: _createPoints(polygonCoords[0]),
+            ),
           );
         }
       } else if (type == 'Polygon') {
         for (var ring in coordinates) {
-          polygons.add(BasePolygon(ma: codeStr, points: _createPoints(ring)));
+          polygons.add(
+            BasePolygon(ma: codeStr, ten: tenStr, points: _createPoints(ring)),
+          );
         }
       }
     }

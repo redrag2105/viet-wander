@@ -111,11 +111,8 @@ class SearchResultsView extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 12),
               onTap: () {
                 FocusScope.of(context).unfocus();
-                if (c.parentMa.length == 2) {
-                  controller.selectProvinceByMa(c.parentMa);
-                } else {
-                  controller.selectCommuneByMa(c.parentMa);
-                }
+                // Select the associated commune based on the committee
+                controller.selectCommuneFromCommittee(c);
               },
             );
           }),

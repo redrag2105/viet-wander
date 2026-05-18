@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:tiengviet/tiengviet.dart';
 import 'package:viet_wander/data/providers/local/local_data.dart';
 import 'package:viet_wander/domain/entities/province.dart';
+import 'package:viet_wander/domain/entities/committee.dart';
 import 'map_stats_state.dart';
 
 class MapStatsController extends StateNotifier<MapStatsState> {
@@ -71,7 +72,7 @@ class MapStatsController extends StateNotifier<MapStatsState> {
     );
   }
 
-  /// Xử lý khi chọn một Tỉnh (từ danh sách hoặc từ Click bản đồ)
+  /// Chọn một Tỉnh
   void selectProvince(Province province) {
     final repo = _ref.read(mapRepositoryProvider);
 
@@ -104,9 +105,25 @@ class MapStatsController extends StateNotifier<MapStatsState> {
     }
   }
 
+  void selectCommuneFromCommittee(Committee c) {
+    try {
+      final repo = _ref.read(mapRepositoryProvider);
+      final allCommunes = repo.getAllCommunes();
+
+      final commune = allCommunes.firstWhere((commune) {
+        if (commune.parentMa != c.parentMa) return false;
+
+        return c.ten.toLowerCase().contains(commune.ten.toLowerCase());
+      });
+
+      selectCommuneByMa(commune.ma);
+    } catch (e) {
+      selectProvinceByMa(c.parentMa);
+    }
+  }
+
   void selectCommuneByMa(String ma) {
     if (state.selectedCommune?.ma == ma) {
-      // Unselect if clicking the already selected commune
       unselectCommune();
       return;
     }
@@ -117,7 +134,17 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       final allCommunes = repo.getAllCommunes();
       final commune = allCommunes.firstWhere((c) => c.ma == ma);
 
-      state = state.copyWith(selectedCommune: commune, isDetailMode: true);
+      var currentCommittees = state.committees;
+      if (currentCommittees.isEmpty ||
+          currentCommittees.first.parentMa != commune.parentMa) {
+        currentCommittees = repo.getCommitteesByProvince(commune.parentMa);
+      }
+
+      state = state.copyWith(
+        selectedCommune: commune,
+        committees: currentCommittees,
+        isDetailMode: true,
+      );
     } catch (e) {
       unselectCommune();
     }
