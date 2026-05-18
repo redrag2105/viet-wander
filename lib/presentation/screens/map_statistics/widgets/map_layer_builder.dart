@@ -25,6 +25,7 @@ class MapLayerBuilders {
               'Hải Phòng',
               'Cần Thơ',
               'Đà Nẵng',
+              'Đồng Nai',
             ].contains(p.tenShort);
           } else if (currentZoom <= 7.5) {
             return const [
@@ -34,6 +35,7 @@ class MapLayerBuilders {
               'Hải Phòng',
               'Cần Thơ',
               'Đà Nẵng',
+              'Đồng Nai',
               'Bắc Ninh',
               'Ninh Bình',
               'Hưng Yên',
