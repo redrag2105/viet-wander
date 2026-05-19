@@ -60,11 +60,22 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
     }
   }
 
-  double _getTargetZoom(double area) {
+  double _getProvinceTargetZoom(double area) {
     if (area > 12000) return 8.75;
     if (area > 8500) return 9.25;
     if (area > 7000) return 9.5;
     return 10.0;
+  }
+
+  double _getCommuneTargetZoom(double area) {
+    if (area > 800) return 11.0;
+    if (area > 600) return 11.25;
+    if (area > 400) return 11.5;
+    if (area > 200) return 11.75;
+    if (area > 100) return 12.0;
+    if (area > 50) return 12.5;
+    if (area > 25) return 12.75;
+    return 13.5;
   }
 
   LatLng _getOffsetCenter(LatLng target, double targetZoom) {
@@ -108,7 +119,9 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
           .firstOrNull;
 
       if (poly != null && poly.points.isNotEmpty) {
-        const double targetZoom = 11.5;
+        final double targetZoom = _getCommuneTargetZoom(
+          next.selectedCommune!.areaKm2,
+        );
         final LatLng offsetCenter = _getOffsetCenter(poly.centroid, targetZoom);
         mapController.animatedMove(offsetCenter, targetZoom, tickerProvider);
       }
@@ -116,7 +129,7 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
             next.selectedCommune == null &&
             next.selectedProvince != null) ||
         (oldProvinceMa != newProvinceMa && next.selectedProvince != null)) {
-      final targetZoom = _getTargetZoom(next.selectedProvince!.areaKm2);
+      final targetZoom = _getProvinceTargetZoom(next.selectedProvince!.areaKm2);
       final LatLng rawCenter = LatLng(
         next.selectedProvince!.centroidLat,
         next.selectedProvince!.centroidLon,

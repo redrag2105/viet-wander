@@ -17,7 +17,7 @@ class _MapStatsScreenState extends ConsumerState<MapStatsScreen>
     with TickerProviderStateMixin {
   double _expandedWidth = 420.0;
   bool _isDragging = false;
-  static const double _minWidth = 320.0;
+  static const double _minWidth = 400.0;
   static const double _maxWidth = 650.0;
 
   late AnimationController _lottieController;
@@ -86,12 +86,17 @@ class _MapStatsScreenState extends ConsumerState<MapStatsScreen>
                   onBackTap: () => context.go('/welcome'),
                   onToggleSidebar: controller.toggleSidebar,
                   onDragStart: () => setState(() => _isDragging = true),
-                  onDragUpdate: (details) => setState(() {
-                    _expandedWidth = (_expandedWidth - details.delta.dx).clamp(
-                      _minWidth,
-                      _maxWidth,
-                    );
-                  }),
+                  onDragUpdate: (details) {
+                    final newWidth = _expandedWidth - details.delta.dx;
+                    if (newWidth < _minWidth - 10) {
+                      // auto close if dragged beyond minWidth significantly
+                      if (isSidebarOpen) controller.toggleSidebar();
+                    } else {
+                      setState(() {
+                        _expandedWidth = newWidth.clamp(_minWidth, _maxWidth);
+                      });
+                    }
+                  },
                   onDragEnd: () => setState(() => _isDragging = false),
                 ),
               ],
