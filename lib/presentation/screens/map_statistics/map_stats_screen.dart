@@ -182,8 +182,8 @@ class _MapStatsScreenState extends ConsumerState<MapStatsScreen> {
                             width: 12,
                             height: double.infinity,
                             color: _isDragging
-                                ? Colors.tealAccent.withValues(alpha: 0.1)
-                                : Colors.transparent,
+                                ? const Color(0x456E6E6E)
+                                : const Color(0x266E6E6E),
                             child: Center(
                               child: Container(
                                 width: 3,

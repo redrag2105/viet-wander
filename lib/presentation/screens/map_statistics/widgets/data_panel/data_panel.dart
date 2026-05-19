@@ -29,7 +29,7 @@ class _DataPanelState extends ConsumerState<DataPanel> {
 
     return Container(
       color: const Color(0xFF020617),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

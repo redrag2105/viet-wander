@@ -98,24 +98,36 @@ class _SearchResultsViewState extends State<SearchResultsView> {
                   firstChild: ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
                     itemCount: state.filteredProvinces.length,
                     itemBuilder: (context, index) {
                       final p = state.filteredProvinces[index];
-                      return ListTile(
-                        contentPadding: const EdgeInsets.only(right: 21.0),
-                        title: Text(
-                          p.ten,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                      return Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.only(
+                            left: 12.0,
+                            right: 18.0,
+                          ),
+                          title: Text(
+                            p.ten,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          subtitle: Text(
+                            '${Formatters.formatNumber(p.population)} người - ${Formatters.formatNumber(p.areaKm2, fractionDigits: 2)} km²',
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 12,
+                          ),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            controller.selectProvince(p);
+                          },
                         ),
-                        subtitle: Text(
-                          '${Formatters.formatNumber(p.population)} người - ${Formatters.formatNumber(p.areaKm2, fractionDigits: 2)} km²',
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                        onTap: () {
-                          FocusScope.of(context).unfocus();
-                          controller.selectProvince(p);
-                        },
                       );
                     },
                   ),
@@ -148,36 +160,49 @@ class _SearchResultsViewState extends State<SearchResultsView> {
                   firstChild: ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
+
                     itemCount: state.filteredCommunes.length,
                     itemBuilder: (context, index) {
                       final c = state.filteredCommunes[index];
                       final pName = _getProvinceName(c.parentMa);
-                      return ListTile(
-                        contentPadding: const EdgeInsets.only(right: 21.0),
-                        title: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              c.ten,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            _buildProvinceBadge(pName),
-                          ],
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            '${Formatters.formatNumber(c.population)} người - ${Formatters.formatNumber(c.areaKm2, fractionDigits: 2)} km²',
+                      return Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          contentPadding: const EdgeInsets.only(
+                            left: 12.0,
+                            right: 18.0,
+                          ),
+                          title: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                c.ten,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              _buildProvinceBadge(pName),
+                            ],
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              '${Formatters.formatNumber(c.population)} người - ${Formatters.formatNumber(c.areaKm2, fractionDigits: 2)} km²',
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 12,
+                          ),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            controller.selectCommuneByMa(c.ma);
+                          },
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                        onTap: () {
-                          FocusScope.of(context).unfocus();
-                          controller.selectCommuneByMa(c.ma);
-                        },
                       );
                     },
                   ),
@@ -211,7 +236,8 @@ class _SearchResultsViewState extends State<SearchResultsView> {
                   firstChild: ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
+
                     itemCount: state.filteredCommittees.length,
                     itemBuilder: (context, index) {
                       final c = state.filteredCommittees[index];
@@ -220,29 +246,41 @@ class _SearchResultsViewState extends State<SearchResultsView> {
                         'Ủy ban nhân dân',
                         'UBND',
                       );
-                      return ListTile(
-                        contentPadding: const EdgeInsets.only(right: 21.0),
-                        title: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              displayName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+                      return Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.only(
+                            left: 12.0,
+                            right: 18.0,
+                          ),
+                          title: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                displayName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            _buildProvinceBadge(pName),
-                          ],
+                              _buildProvinceBadge(pName),
+                            ],
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(c.type),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 12,
+                          ),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            controller.selectCommuneFromCommittee(c);
+                          },
                         ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(c.type),
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                        onTap: () {
-                          FocusScope.of(context).unfocus();
-                          controller.selectCommuneFromCommittee(c);
-                        },
                       );
                     },
                   ),
@@ -282,28 +320,39 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   ) {
     return Container(
       color: const Color(0xFF020617),
-      padding: const EdgeInsets.only(top: 12.0, bottom: 12.0, right: 18.0),
+      padding: const EdgeInsets.only(right: 16.0),
       alignment: Alignment.centerLeft,
-      child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 12.0,
+              horizontal: 16.0,
             ),
-            Icon(
-              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: color,
-              size: 18,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: color,
+                  size: 18,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
