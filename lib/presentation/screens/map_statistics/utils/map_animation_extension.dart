@@ -6,8 +6,10 @@ extension AnimatedMapMove on MapController {
   void animatedMove(
     LatLng destLocation,
     double destZoom,
-    TickerProvider vsync,
-  ) {
+    TickerProvider vsync, {
+    Duration duration = const Duration(milliseconds: 1100),
+    Curve curve = Curves.easeInOutSine,
+  }) {
     final latTween = Tween<double>(
       begin: camera.center.latitude,
       end: destLocation.latitude,
@@ -18,14 +20,9 @@ extension AnimatedMapMove on MapController {
     );
     final zoomTween = Tween<double>(begin: camera.zoom, end: destZoom);
 
-    final controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: vsync,
-    );
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Curves.fastOutSlowIn,
-    );
+    final controller = AnimationController(duration: duration, vsync: vsync);
+
+    final animation = CurvedAnimation(parent: controller, curve: curve);
 
     controller.addListener(() {
       move(

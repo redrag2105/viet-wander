@@ -57,31 +57,40 @@ class LocalDataService {
     try {
       final provinceRaw = await rootBundle.loadString(
         'assets/data/provinces.json',
+        cache: false,
       );
       final communeRaw = await rootBundle.loadString(
         'assets/data/communes.json',
+        cache: false,
       );
       final committeeRaw = await rootBundle.loadString(
         'assets/data/committees.json',
+        cache: false,
       );
-
       final provinceGeoRaw = await rootBundle.loadString(
         'assets/data/provinces.geojson',
+        cache: false,
       );
       final communeGeoRaw = await rootBundle.loadString(
         'assets/data/communes.geojson',
+        cache: false,
       );
 
-      _provinces = await Isolate.run(() => _parseProvinces(provinceRaw));
-      _communes = await Isolate.run(() => _parseCommunes(communeRaw));
-      _committees = await Isolate.run(() => _parseCommittees(committeeRaw));
+      final result = await Isolate.run(() {
+        return (
+          provinces: _parseProvinces(provinceRaw),
+          communes: _parseCommunes(communeRaw),
+          committees: _parseCommittees(committeeRaw),
+          provinceGeo: _cleanGeoJson(provinceGeoRaw),
+          communeGeo: _cleanGeoJson(communeGeoRaw),
+        );
+      });
 
-      _provinceGeoJsonStr = await Isolate.run(
-        () => _cleanGeoJson(provinceGeoRaw),
-      );
-      _communeGeoJsonStr = await Isolate.run(
-        () => _cleanGeoJson(communeGeoRaw),
-      );
+      _provinces = result.provinces;
+      _communes = result.communes;
+      _committees = result.committees;
+      _provinceGeoJsonStr = result.provinceGeo;
+      _communeGeoJsonStr = result.communeGeo;
 
       debugPrint('✅ Khởi tạo dữ liệu Local thành công!');
     } catch (e) {

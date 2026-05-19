@@ -65,6 +65,66 @@ class _SearchResultsViewState extends State<SearchResultsView> {
     );
   }
 
+  Widget _buildSectionGroup<T>({
+    required String headerTitle,
+    required Color headerColor,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required List<T> items,
+    required Widget Function(T item) titleBuilder,
+    required Widget Function(T item) subtitleBuilder,
+    required void Function(T item) onTap,
+  }) {
+    if (items.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _StickyHeaderDelegate(
+            title: headerTitle,
+            color: headerColor,
+            isExpanded: isExpanded,
+            onToggle: onToggle,
+          ),
+        ),
+        if (isExpanded)
+          SliverPadding(
+            padding: const EdgeInsets.only(left: 12.0, right: 16.0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = items[index];
+                return Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.only(
+                      left: 12.0,
+                      right: 18.0,
+                    ),
+                    title: titleBuilder(item),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: subtitleBuilder(item),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                    onTap: () {
+                      FocusScope.of(context).unfocus();
+                      onTap(item);
+                    },
+                  ),
+                );
+              }, childCount: items.length),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
@@ -78,221 +138,64 @@ class _SearchResultsViewState extends State<SearchResultsView> {
 
     return CustomScrollView(
       slivers: [
-        // -- PROVINCES --
-        if (state.filteredProvinces.isNotEmpty)
-          SliverMainAxisGroup(
-            slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyHeaderDelegate(
-                  title: 'TỈNH / THÀNH PHỐ',
-                  color: Colors.amber,
-                  isExpanded: _isProvinceExpanded,
-                  onToggle: () => setState(
-                    () => _isProvinceExpanded = !_isProvinceExpanded,
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: AnimatedCrossFade(
-                  firstChild: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
-                    itemCount: state.filteredProvinces.length,
-                    itemBuilder: (context, index) {
-                      final p = state.filteredProvinces[index];
-                      return Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.only(
-                            left: 12.0,
-                            right: 18.0,
-                          ),
-                          title: Text(
-                            p.ten,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Text(
-                            '${Formatters.formatNumber(p.population)} người - ${Formatters.formatNumber(p.areaKm2, fractionDigits: 2)} km²',
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 12,
-                          ),
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            controller.selectProvince(p);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  secondChild: const SizedBox.shrink(),
-                  crossFadeState: _isProvinceExpanded
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  duration: const Duration(milliseconds: 250),
-                ),
-              ),
+        _buildSectionGroup(
+          headerTitle: 'TỈNH / THÀNH PHỐ',
+          headerColor: Colors.amber,
+          isExpanded: _isProvinceExpanded,
+          onToggle: () =>
+              setState(() => _isProvinceExpanded = !_isProvinceExpanded),
+          items: state.filteredProvinces,
+          titleBuilder: (p) =>
+              Text(p.ten, style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitleBuilder: (p) => Text(
+            '${Formatters.formatNumber(p.population)} người - ${Formatters.formatNumber(p.areaKm2, fractionDigits: 2)} km²',
+          ),
+          onTap: (p) => controller.selectProvince(p),
+        ),
+
+        _buildSectionGroup(
+          headerTitle: 'XÃ / PHƯỜNG',
+          headerColor: Colors.tealAccent,
+          isExpanded: _isCommuneExpanded,
+          onToggle: () =>
+              setState(() => _isCommuneExpanded = !_isCommuneExpanded),
+          items: state.filteredCommunes,
+          titleBuilder: (c) => Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(c.ten, style: const TextStyle(fontWeight: FontWeight.w500)),
+              _buildProvinceBadge(_getProvinceName(c.parentMa)),
             ],
           ),
-
-        // -- COMMUNES --
-        if (state.filteredCommunes.isNotEmpty)
-          SliverMainAxisGroup(
-            slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyHeaderDelegate(
-                  title: 'XÃ / PHƯỜNG',
-                  color: Colors.tealAccent,
-                  isExpanded: _isCommuneExpanded,
-                  onToggle: () =>
-                      setState(() => _isCommuneExpanded = !_isCommuneExpanded),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: AnimatedCrossFade(
-                  firstChild: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
-
-                    itemCount: state.filteredCommunes.length,
-                    itemBuilder: (context, index) {
-                      final c = state.filteredCommunes[index];
-                      final pName = _getProvinceName(c.parentMa);
-                      return Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.only(
-                            left: 12.0,
-                            right: 18.0,
-                          ),
-                          title: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                c.ten,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              _buildProvinceBadge(pName),
-                            ],
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              '${Formatters.formatNumber(c.population)} người - ${Formatters.formatNumber(c.areaKm2, fractionDigits: 2)} km²',
-                            ),
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 12,
-                          ),
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            controller.selectCommuneByMa(c.ma);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  secondChild: const SizedBox.shrink(),
-                  crossFadeState: _isCommuneExpanded
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  duration: const Duration(milliseconds: 250),
-                ),
-              ),
-            ],
+          subtitleBuilder: (c) => Text(
+            '${Formatters.formatNumber(c.population)} người - ${Formatters.formatNumber(c.areaKm2, fractionDigits: 2)} km²',
           ),
+          onTap: (c) => controller.selectCommuneByMa(c.ma),
+        ),
 
-        // -- COMMITTEES --
-        if (state.filteredCommittees.isNotEmpty)
-          SliverMainAxisGroup(
-            slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyHeaderDelegate(
-                  title: 'ỦY BAN NHÂN DÂN',
-                  color: Colors.lightBlue,
-                  isExpanded: _isCommitteeExpanded,
-                  onToggle: () => setState(
-                    () => _isCommitteeExpanded = !_isCommitteeExpanded,
-                  ),
+        _buildSectionGroup(
+          headerTitle: 'ỦY BAN NHÂN DÂN',
+          headerColor: Colors.lightBlue,
+          isExpanded: _isCommitteeExpanded,
+          onToggle: () =>
+              setState(() => _isCommitteeExpanded = !_isCommitteeExpanded),
+          items: state.filteredCommittees,
+          titleBuilder: (c) {
+            final displayName = c.ten.replaceAll('Ủy ban nhân dân', 'UBND');
+            return Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: AnimatedCrossFade(
-                  firstChild: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(left: 12.0, right: 16.0),
-
-                    itemCount: state.filteredCommittees.length,
-                    itemBuilder: (context, index) {
-                      final c = state.filteredCommittees[index];
-                      final pName = _getProvinceName(c.parentMa, c.parentTen);
-                      final displayName = c.ten.replaceAll(
-                        'Ủy ban nhân dân',
-                        'UBND',
-                      );
-                      return Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.only(
-                            left: 12.0,
-                            right: 18.0,
-                          ),
-                          title: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              _buildProvinceBadge(pName),
-                            ],
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(c.type),
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 12,
-                          ),
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            controller.selectCommuneFromCommittee(c);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  secondChild: const SizedBox.shrink(),
-                  crossFadeState: _isCommitteeExpanded
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  duration: const Duration(milliseconds: 250),
-                ),
-              ),
-            ],
-          ),
+                _buildProvinceBadge(_getProvinceName(c.parentMa, c.parentTen)),
+              ],
+            );
+          },
+          subtitleBuilder: (c) => Text(c.type),
+          onTap: (c) => controller.selectCommuneFromCommittee(c),
+        ),
       ],
     );
   }

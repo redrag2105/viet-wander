@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_controller.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_panel/map_controls.dart';
 import 'widgets/map_panel/map_panel.dart';
-import 'widgets/data_panel/data_panel.dart';
 
 class MapStatsScreen extends ConsumerStatefulWidget {
   const MapStatsScreen({super.key});
@@ -12,198 +13,113 @@ class MapStatsScreen extends ConsumerStatefulWidget {
   ConsumerState<MapStatsScreen> createState() => _MapStatsScreenState();
 }
 
-class _MapStatsScreenState extends ConsumerState<MapStatsScreen> {
+class _MapStatsScreenState extends ConsumerState<MapStatsScreen>
+    with TickerProviderStateMixin {
   double _expandedWidth = 420.0;
   bool _isDragging = false;
   static const double _minWidth = 320.0;
   static const double _maxWidth = 650.0;
 
+  late AnimationController _lottieController;
+  bool _isMapReady = false;
+  bool _isLottieFinished = false;
+  bool _shouldFadeOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lottieController = AnimationController(vsync: this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) setState(() => _isMapReady = true);
+      });
+    });
+
+    _lottieController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        if (_isMapReady) {
+          setState(() => _shouldFadeOut = true);
+        } else {
+          _lottieController.repeat();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _lottieController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(mapStatsControllerProvider);
+    final isSidebarOpen = ref.watch(
+      mapStatsControllerProvider.select((state) => state.isSidebarOpen),
+    );
+
     final controller = ref.read(mapStatsControllerProvider.notifier);
 
-    final double actualWidth = state.isSidebarOpen ? _expandedWidth : 0;
+    final actualWidth = isSidebarOpen ? _expandedWidth : 0.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF020617),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: MapPanel(rightMargin: actualWidth, isDragging: _isDragging),
-          ),
-
-          Positioned(
-            top: 24,
-            left: 24,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => context.go('/'),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B).withValues(alpha: 0.9),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 2.0),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      size: 18,
-                    ),
+          // MAIN UI
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 600),
+            opacity: _isMapReady ? 1.0 : 0.0,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: MapPanel(rightMargin: actualWidth),
                   ),
                 ),
-              ),
+                MapSidebarControls(
+                  actualWidth: actualWidth,
+                  expandedWidth: _expandedWidth,
+                  isSidebarOpen: isSidebarOpen,
+                  isDragging: _isDragging,
+                  onBackTap: () => context.go('/welcome'),
+                  onToggleSidebar: controller.toggleSidebar,
+                  onDragStart: () => setState(() => _isDragging = true),
+                  onDragUpdate: (details) => setState(() {
+                    _expandedWidth = (_expandedWidth - details.delta.dx).clamp(
+                      _minWidth,
+                      _maxWidth,
+                    );
+                  }),
+                  onDragEnd: () => setState(() => _isDragging = false),
+                ),
+              ],
             ),
           ),
 
-          // Closing TAB button
-          AnimatedPositioned(
-            duration: _isDragging
-                ? Duration.zero
-                : const Duration(milliseconds: 700),
-            curve: Curves.easeInOutCubic,
-            top: 24,
-            right: actualWidth,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: controller.toggleSidebar,
-                child: Container(
-                  width: 44,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF020617),
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(12),
-                    ),
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      left: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      bottom: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                        offset: const Offset(-4, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    state.isSidebarOpen
-                        ? Icons.view_sidebar_outlined
-                        : Icons.view_sidebar,
-                    color: Colors.white54,
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Data Panel
-          Positioned(
-            top: 0,
-            bottom: 0,
-            right: 0,
-            child: AnimatedContainer(
-              duration: _isDragging
-                  ? Duration.zero
-                  : const Duration(milliseconds: 700),
-              curve: Curves.easeInOutCubic,
-              width: actualWidth,
-              decoration: BoxDecoration(
+          // LOADING OVERLAY
+          if (!_isLottieFinished)
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 600),
+              opacity: _shouldFadeOut ? 0.0 : 1.0,
+              onEnd: () {
+                if (_shouldFadeOut) setState(() => _isLottieFinished = true);
+              },
+              child: Container(
                 color: const Color(0xFF020617),
-                border: Border(
-                  left: BorderSide(
-                    color: state.isSidebarOpen
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                  ),
-                ),
-                boxShadow: [
-                  if (state.isSidebarOpen)
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 20,
-                      offset: const Offset(-5, 0),
-                    ),
-                ],
-              ),
-              child: ClipRect(
-                child: OverflowBox(
-                  minWidth: _expandedWidth,
-                  maxWidth: _expandedWidth,
-                  alignment: Alignment.topRight,
-                  child: Row(
-                    children: [
-                      // DRAG HANDLE
-                      GestureDetector(
-                        onHorizontalDragStart: (_) =>
-                            setState(() => _isDragging = true),
-                        onHorizontalDragUpdate: (details) {
-                          setState(() {
-                            _expandedWidth -= details.delta.dx;
-                            if (_expandedWidth > _maxWidth) {
-                              _expandedWidth = _maxWidth;
-                            }
-                            if (_expandedWidth < _minWidth) {
-                              controller.closeSidebar();
-                              _expandedWidth = 420.0;
-                              _isDragging = false;
-                            }
-                          });
-                        },
-                        onHorizontalDragEnd: (_) =>
-                            setState(() => _isDragging = false),
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.resizeLeftRight,
-                          child: Container(
-                            width: 12,
-                            height: double.infinity,
-                            color: _isDragging
-                                ? const Color(0x456E6E6E)
-                                : const Color(0x266E6E6E),
-                            child: Center(
-                              child: Container(
-                                width: 3,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(1),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: DataPanel()),
-                    ],
+                child: Center(
+                  child: Lottie.asset(
+                    'assets/lotties/loading_globe.json',
+                    controller: _lottieController,
+                    onLoaded: (composition) {
+                      _lottieController.duration = composition.duration;
+                      _lottieController.forward();
+                    },
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -11,7 +11,9 @@ class MapStatsController extends StateNotifier<MapStatsState> {
   final Ref _ref;
 
   MapStatsController(this._ref) : super(MapStatsState()) {
-    _init();
+    Future.delayed(const Duration(milliseconds: 3000), () {
+      _init();
+    });
   }
 
   Future<void> _init() async {
@@ -26,8 +28,8 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       isLoading: false,
       provinces: allProvinces,
       filteredProvinces: allProvinces,
-      filteredCommunes: repo.getAllCommunes().take(50).toList(),
-      filteredCommittees: repo.getAllCommittees().take(50).toList(),
+      filteredCommunes: repo.getAllCommunes().take(100).toList(),
+      filteredCommittees: repo.getAllCommittees().take(100).toList(),
     );
   }
 
@@ -57,8 +59,8 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       final repo = _ref.read(mapRepositoryProvider);
       state = state.copyWith(
         filteredProvinces: state.provinces,
-        filteredCommunes: repo.getAllCommunes().take(50).toList(),
-        filteredCommittees: repo.getAllCommittees().take(50).toList(),
+        filteredCommunes: repo.getAllCommunes().take(100).toList(),
+        filteredCommittees: repo.getAllCommittees().take(100).toList(),
       );
       return;
     }
@@ -76,7 +78,7 @@ class MapStatsController extends StateNotifier<MapStatsState> {
         .where((c) {
           return c.searchKey.contains(searchKeyLower);
         })
-        .take(50)
+        .take(100)
         .toList();
 
     final allCommittees = repo.getAllCommittees();
@@ -84,7 +86,7 @@ class MapStatsController extends StateNotifier<MapStatsState> {
         .where((c) {
           return c.searchKey.contains(searchKeyLower);
         })
-        .take(50)
+        .take(100)
         .toList();
 
     state = state.copyWith(

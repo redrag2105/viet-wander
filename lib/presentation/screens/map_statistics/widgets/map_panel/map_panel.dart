@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:viet_wander/app/config/app_config.dart';
 import 'package:viet_wander/data/providers/polygon_provider.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_controller.dart';
@@ -56,12 +56,9 @@ class _MapPanelState extends ConsumerState<MapPanel>
               interactionOptions: const InteractionOptions(
                 scrollWheelVelocity: 0.0025,
               ),
-              // cameraConstraint: CameraConstraint.containCenter(
-              //   bounds: LatLngBounds(
-              //     const LatLng(7.0, 110.0),
-              //     const LatLng(24.0, 125.0),
-              //   ),
-              // ),
+              cameraConstraint: CameraConstraint.contain(
+                bounds: AppConfig.mapBounds,
+              ),
               initialZoom: AppConfig.defaultMapZoom,
               minZoom: 5.5,
               maxZoom: 13.5,
@@ -73,11 +70,15 @@ class _MapPanelState extends ConsumerState<MapPanel>
                 urlTemplate: isDarkMode
                     ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
                     : 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+                errorImage: const AssetImage(
+                  'assets/images/map_tile_error.png',
+                ),
+                tileProvider: CancellableNetworkTileProvider(),
                 subdomains: const ['a', 'b', 'c', 'd'],
               ),
               PolygonLayer(
                 polygons: buildPolygons(state),
-                polygonCulling: true,
+                // polygonCulling: currentZoom >= 11,
               ),
               MarkerLayer(
                 markers: MapLayerBuilders.buildProvinceLabels(

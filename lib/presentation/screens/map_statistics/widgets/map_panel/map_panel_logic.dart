@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -50,10 +49,14 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
 
     if (oldTier != newTier) {
       setState(() => currentZoom = camera.zoom);
-      triggerZoomIndicator();
+      if (hasGesture) triggerZoomIndicator();
     } else if (currentZoom != camera.zoom) {
-      setState(() => currentZoom = camera.zoom);
-      triggerZoomIndicator();
+      currentZoom = camera.zoom;
+
+      if (hasGesture) {
+        setState(() {});
+        triggerZoomIndicator();
+      }
     }
   }
 
@@ -62,6 +65,32 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
     if (area > 8500) return 9.25;
     if (area > 7000) return 9.5;
     return 10.0;
+  }
+
+  LatLng _getOffsetCenter(LatLng target, double targetZoom) {
+    final double sidebarWidth = widget.rightMargin;
+    if (sidebarWidth <= 0) return target;
+
+    final double shiftX = sidebarWidth / 2.0;
+
+    final Offset projectedPoint = mapController.camera.projectAtZoom(
+      target,
+      targetZoom,
+    );
+    final Offset offsetPoint = Offset(
+      projectedPoint.dx + shiftX,
+      projectedPoint.dy,
+    );
+    final LatLng rawOffsetCenter = mapController.camera.unprojectAtZoom(
+      offsetPoint,
+      targetZoom,
+    );
+
+    if (AppConfig.mapBounds.contains(rawOffsetCenter)) {
+      return rawOffsetCenter;
+    } else {
+      return target;
+    }
   }
 
   void listenToMapStateChanges(MapStatsState? previous, MapStatsState next) {
@@ -79,21 +108,22 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
           .firstOrNull;
 
       if (poly != null && poly.points.isNotEmpty) {
-        mapController.animatedMove(poly.centroid, 11.5, tickerProvider);
+        const double targetZoom = 11.5;
+        final LatLng offsetCenter = _getOffsetCenter(poly.centroid, targetZoom);
+        mapController.animatedMove(offsetCenter, targetZoom, tickerProvider);
       }
     } else if ((oldCommuneMa != newCommuneMa &&
             next.selectedCommune == null &&
             next.selectedProvince != null) ||
         (oldProvinceMa != newProvinceMa && next.selectedProvince != null)) {
       final targetZoom = _getTargetZoom(next.selectedProvince!.areaKm2);
-      mapController.animatedMove(
-        LatLng(
-          next.selectedProvince!.centroidLat,
-          next.selectedProvince!.centroidLon,
-        ),
-        targetZoom,
-        tickerProvider,
+      final LatLng rawCenter = LatLng(
+        next.selectedProvince!.centroidLat,
+        next.selectedProvince!.centroidLon,
       );
+
+      final LatLng offsetCenter = _getOffsetCenter(rawCenter, targetZoom);
+      mapController.animatedMove(offsetCenter, targetZoom, tickerProvider);
     } else if ((oldCommuneMa != newCommuneMa ||
             oldProvinceMa != newProvinceMa) &&
         next.selectedCommune == null &&
@@ -102,6 +132,7 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
         AppConfig.defaultMapCenter,
         AppConfig.defaultMapZoom,
         tickerProvider,
+        duration: const Duration(milliseconds: 1250),
       );
     }
   }
