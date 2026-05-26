@@ -148,44 +148,14 @@ class EnvironmentCardsWidget extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.water_drop_outlined,
-                            color: Colors.white54,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Độ ẩm: ${data.humidity}%',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
+                      _buildInfoRow(
+                        icon: Icons.water_drop_outlined,
+                        text: 'Độ ẩm: ${data.humidity}%',
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.umbrella_outlined,
-                            color: Colors.white54,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Mưa: ${data.rain1h} mm',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
+                      _buildInfoRow(
+                        icon: Icons.umbrella_outlined,
+                        text: 'Mưa: ${data.rain1h} mm',
                       ),
                     ],
                   ),
@@ -217,6 +187,22 @@ class EnvironmentCardsWidget extends ConsumerWidget {
         border: Border.all(color: baseColor.withValues(alpha: 0.1), width: 1),
       ),
       child: child,
+    );
+  }
+
+  Widget _buildInfoRow({required IconData icon, required String text}) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white54, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

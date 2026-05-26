@@ -2,6 +2,13 @@ import 'package:viet_wander/domain/entities/committee.dart';
 import 'package:viet_wander/domain/entities/commune.dart';
 import 'package:viet_wander/domain/entities/province.dart';
 
+enum MapViewMode {
+  minimal, // Bản đồ tối mặc định (CartoDB Dark Matter)
+  satellite, // Vệ tinh (ESRI World Imagery)
+  street, // Đường phố (OpenStreetMap)
+  density, // MĐDS (Heatmap)
+}
+
 class MapStatsState {
   final bool isLoading;
   final List<Province> provinces;
@@ -16,6 +23,7 @@ class MapStatsState {
   final bool isSidebarOpen;
   final double sidebarWidth;
   final bool isDragging;
+  final MapViewMode currentMapMode;
 
   MapStatsState({
     this.isLoading = true,
@@ -31,6 +39,7 @@ class MapStatsState {
     this.isSidebarOpen = true,
     this.sidebarWidth = 420.0,
     this.isDragging = false,
+    this.currentMapMode = MapViewMode.minimal,
   });
 
   MapStatsState copyWith({
@@ -49,6 +58,7 @@ class MapStatsState {
     bool? isSidebarOpen,
     double? sidebarWidth,
     bool? isDragging,
+    MapViewMode? currentMapMode,
   }) {
     return MapStatsState(
       isLoading: isLoading ?? this.isLoading,
@@ -68,6 +78,7 @@ class MapStatsState {
       isSidebarOpen: isSidebarOpen ?? this.isSidebarOpen,
       sidebarWidth: sidebarWidth ?? this.sidebarWidth,
       isDragging: isDragging ?? this.isDragging,
+      currentMapMode: currentMapMode ?? this.currentMapMode,
     );
   }
 }

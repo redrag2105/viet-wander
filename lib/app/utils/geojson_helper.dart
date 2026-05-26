@@ -8,8 +8,14 @@ class BasePolygon {
   final String ten;
   final List<LatLng> points;
   late final LatLng centroid;
+  final double density;
 
-  BasePolygon({required this.ma, required this.points, this.ten = ''}) {
+  BasePolygon({
+    required this.ma,
+    required this.points,
+    this.ten = '',
+    this.density = 0.0,
+  }) {
     if (points.isEmpty) {
       centroid = const LatLng(0, 0);
     } else {
@@ -29,7 +35,6 @@ class BasePolygon {
 }
 
 class GeoJsonHelper {
-  /// Hàm chuyển đổi chuỗi GeoJSON thành danh sách các Polygon của flutter_map
   static List<Polygon> buildPolygonsFromBase({
     required List<BasePolygon> basePolygons,
     required Color fillColor,
@@ -38,6 +43,7 @@ class GeoJsonHelper {
     bool isDarkMode = false,
     String? selectedMa,
     Color? highlightColor,
+    Map<String, Color>? customColors,
   }) {
     final lightPalette = [
       const Color(0xFFFCA5A5),
@@ -74,19 +80,55 @@ class GeoJsonHelper {
       Color polygonColor;
       double currentStroke = borderStrokeWidth;
 
-      if (selectedMa != null && base.ma == selectedMa) {
-        polygonColor = palette[code % palette.length].withValues(
-          alpha: isDarkMode ? 0.6 : 0.8,
-        );
-        currentStroke += 1.25;
-      } else {
-        polygonColor = palette[code % palette.length].withValues(
-          alpha: isDarkMode ? 0.45 : 0.54,
-        );
-        if (selectedMa != null) {
-          polygonColor = polygonColor.withValues(
-            alpha: isDarkMode ? 0.1 : 0.15,
+      // Density mode
+      if (customColors != null) {
+        String normalizedMa = int.tryParse(base.ma)?.toString() ?? base.ma;
+
+        if (customColors.containsKey(base.ma) ||
+            customColors.containsKey(normalizedMa)) {
+          Color heatColor =
+              customColors[base.ma] ?? customColors[normalizedMa]!;
+          if (selectedMa != null) {
+            if (base.ma == selectedMa) {
+              polygonColor = heatColor;
+              currentStroke += 1.5;
+            } else {
+              polygonColor = heatColor.withValues(alpha: 0.15);
+            }
+          } else {
+            polygonColor = heatColor.withValues(alpha: 0.8);
+          }
+        } else {
+          polygonColor = Colors.transparent;
+        }
+      }
+      // Satellite/Street mode
+      else if (fillColor == Colors.transparent) {
+        if (selectedMa != null && base.ma == selectedMa) {
+          polygonColor = (highlightColor ?? Colors.amber).withValues(
+            alpha: 0.3,
           );
+          currentStroke += 1.25;
+        } else {
+          polygonColor = Colors.transparent;
+        }
+      }
+      // Minimal mode
+      else {
+        if (selectedMa != null && base.ma == selectedMa) {
+          polygonColor = palette[code % palette.length].withValues(
+            alpha: isDarkMode ? 0.6 : 0.8,
+          );
+          currentStroke += 1.25;
+        } else {
+          polygonColor = palette[code % palette.length].withValues(
+            alpha: isDarkMode ? 0.45 : 0.54,
+          );
+          if (selectedMa != null) {
+            polygonColor = polygonColor.withValues(
+              alpha: isDarkMode ? 0.1 : 0.15,
+            );
+          }
         }
       }
 
@@ -119,12 +161,15 @@ class GeoJsonHelper {
           '0';
       final String tenStr = properties['ten']?.toString() ?? '';
 
+      final double densityVal = (properties['density'] ?? 0).toDouble();
+
       if (type == 'MultiPolygon') {
         for (var polygonCoords in coordinates) {
           polygons.add(
             BasePolygon(
               ma: codeStr,
               ten: tenStr,
+              density: densityVal,
               points: _createPoints(polygonCoords[0]),
             ),
           );
@@ -132,7 +177,12 @@ class GeoJsonHelper {
       } else if (type == 'Polygon') {
         for (var ring in coordinates) {
           polygons.add(
-            BasePolygon(ma: codeStr, ten: tenStr, points: _createPoints(ring)),
+            BasePolygon(
+              ma: codeStr,
+              ten: tenStr,
+              points: _createPoints(ring),
+              density: densityVal,
+            ),
           );
         }
       }

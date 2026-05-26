@@ -7,12 +7,24 @@ import 'package:viet_wander/domain/repositories/environment_repository.dart';
 class EnvironmentRepositoryImpl implements EnvironmentRepository {
   final Dio _dio;
 
-  static const String _owmKey = '42086bf5c9b7e1d0061ecf7e53078fd1';
-  static const String _waqiKey = '07cee11eadc21dc407e533ab2b6012a72d2bab7c';
+  static const String _owmKey = String.fromEnvironment(
+    'OWM_API_KEY',
+    defaultValue: '',
+  );
+  static const String _waqiKey = String.fromEnvironment(
+    'WAQI_API_KEY',
+    defaultValue: '',
+  );
 
   EnvironmentRepositoryImpl({Dio? dio}) : _dio = dio ?? Dio() {
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
+
+    if (kDebugMode) {
+      if (_owmKey.isEmpty || _waqiKey.isEmpty) {
+        debugPrint('⚠️ CẢNH BÁO: Chưa cấu hình API Keys trong file .env!');
+      }
+    }
   }
 
   @override

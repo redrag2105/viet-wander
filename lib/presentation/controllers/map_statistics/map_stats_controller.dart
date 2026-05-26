@@ -213,6 +213,10 @@ class MapStatsController extends StateNotifier<MapStatsState> {
       committees: [],
     );
   }
+
+  void changeMapMode(MapViewMode mode) {
+    state = state.copyWith(currentMapMode: mode);
+  }
 }
 
 final mapStatsControllerProvider =

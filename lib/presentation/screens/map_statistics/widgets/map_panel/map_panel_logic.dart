@@ -198,9 +198,17 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
   // --- POLYGON ---
   List<Polygon> buildPolygons(MapStatsState state) {
     final isZoomedIn = currentZoom >= 11;
-    final fillColor = isDarkMode
-        ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
-        : const Color(0xFF0EA5E9).withValues(alpha: 0.25);
+    final mode = state.currentMapMode;
+
+    Color fillColor;
+    if (mode == MapViewMode.street || mode == MapViewMode.satellite) {
+      fillColor = Colors.transparent;
+    } else {
+      fillColor = isDarkMode
+          ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
+          : const Color(0xFF0EA5E9).withValues(alpha: 0.25);
+    }
+
     final borderColor = isDarkMode
         ? const Color(0xFF38BDF8).withValues(alpha: 0.6)
         : const Color(0xFF0284C7).withValues(alpha: 0.8);
@@ -210,15 +218,28 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
       return ref
           .watch(communeBasePolygonProvider)
           .maybeWhen(
-            data: (basePolygons) => GeoJsonHelper.buildPolygonsFromBase(
-              basePolygons: basePolygons,
-              fillColor: fillColor,
-              borderColor: borderColor,
-              borderStrokeWidth: 1.0,
-              isDarkMode: isDarkMode,
-              selectedMa: state.selectedCommune?.ma,
-              highlightColor: highlightColor,
-            ),
+            data: (basePolygons) {
+              Map<String, Color>? heatColors;
+              if (mode == MapViewMode.density) {
+                heatColors = {};
+                for (var poly in basePolygons) {
+                  heatColors[poly.ma] = _getDensityColor(
+                    poly.density,
+                    isCommune: true,
+                  );
+                }
+              }
+              return GeoJsonHelper.buildPolygonsFromBase(
+                basePolygons: basePolygons,
+                fillColor: fillColor,
+                borderColor: borderColor,
+                borderStrokeWidth: 1.0,
+                isDarkMode: isDarkMode,
+                selectedMa: state.selectedCommune?.ma,
+                highlightColor: highlightColor,
+                customColors: heatColors,
+              );
+            },
             orElse: () => [],
           );
     } else {
@@ -234,6 +255,17 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
                 combinedPolys.addAll(islands);
               });
 
+              Map<String, Color>? heatColors;
+              if (mode == MapViewMode.density) {
+                heatColors = {};
+                for (var poly in combinedPolys) {
+                  heatColors[poly.ma] = _getDensityColor(
+                    poly.density,
+                    isCommune: false,
+                  );
+                }
+              }
+
               return GeoJsonHelper.buildPolygonsFromBase(
                 basePolygons: combinedPolys,
                 fillColor: fillColor,
@@ -242,10 +274,56 @@ mixin MapPanelLogic on ConsumerState<MapPanel> {
                 isDarkMode: isDarkMode,
                 selectedMa: state.selectedProvince?.ma,
                 highlightColor: highlightColor,
+                customColors: heatColors,
               );
             },
             orElse: () => [],
           );
+    }
+  }
+
+  Color _getDensityColor(double density, {bool isCommune = false}) {
+    if (isCommune) {
+      // Communes
+      if (density >= 35000) return const Color(0xFF4C0519);
+      if (density >= 25000) return const Color(0xFF881337);
+      if (density >= 15000) return const Color(0xFFBE123C);
+      if (density >= 10000) return const Color(0xFFE11D48);
+      if (density >= 7000) return const Color(0xFFF43F5E);
+      if (density >= 4000) return const Color(0xFFF97316);
+      if (density >= 2000) return const Color(0xFFF59E0B);
+      if (density >= 1000) return const Color(0xFFFBBF24);
+      if (density >= 500) return const Color(0xFFFDE047);
+      return const Color(0xFFFEF08A).withValues(alpha: 0.6);
+    } else {
+      // provinces
+      if (density >= 2500) return const Color(0xFF4C0519);
+      if (density >= 2000) return const Color(0xFF881337);
+      if (density >= 1500) return const Color(0xFFBE123C);
+      if (density >= 1000) return const Color(0xFFE11D48);
+      if (density >= 750) return const Color(0xFFF43F5E);
+      if (density >= 500) return const Color(0xFFF97316);
+      if (density >= 350) return const Color(0xFFF59E0B);
+      if (density >= 200) return const Color(0xFFFBBF24);
+      if (density >= 100) return const Color(0xFFFDE047);
+      return const Color(0xFFFEF08A).withValues(alpha: 0.6);
+    }
+  }
+
+  // --- LAYER URL GENERATOR ---
+  String getTileUrl(MapViewMode mode, bool isDark) {
+    switch (mode) {
+      case MapViewMode.minimal || MapViewMode.density:
+        return isDark
+            ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+      case MapViewMode.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+      case MapViewMode.street:
+        return isDark
+            ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
     }
   }
 }

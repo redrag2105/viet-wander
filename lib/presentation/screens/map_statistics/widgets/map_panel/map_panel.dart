@@ -9,6 +9,7 @@ import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_st
 import 'package:viet_wander/presentation/screens/map_statistics/utils/map_animation_extension.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/committee_layer.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/commune_layer.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/map_layer_switcher.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/province_layer.dart';
 
 import 'map_controls.dart';
@@ -35,8 +36,6 @@ class _MapPanelState extends ConsumerState<MapPanel>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mapStatsControllerProvider);
-    final isParsingProvinces = ref.watch(provinceBasePolygonProvider).isLoading;
-    final isParsingCommunes = ref.watch(communeBasePolygonProvider).isLoading;
     final double rightOffset = widget.rightMargin + 24.0;
     final Duration moveDuration = widget.isDragging
         ? Duration.zero
@@ -63,20 +62,33 @@ class _MapPanelState extends ConsumerState<MapPanel>
               ),
               initialZoom: AppConfig.defaultMapZoom,
               minZoom: 5.5,
-              maxZoom: 13.5,
+              maxZoom: state.currentMapMode == MapViewMode.minimal
+                  ? 16.0
+                  : 20.0,
               onPositionChanged: handleZoomChange,
               onTap: handleMapTap,
             ),
             children: [
-              TileLayer(
-                urlTemplate: isDarkMode
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
-                errorImage: const AssetImage(
-                  'assets/images/map_tile_error.png',
+              ColorFiltered(
+                colorFilter:
+                    isDarkMode &&
+                        (state.currentMapMode == MapViewMode.satellite)
+                    ? ColorFilter.mode(
+                        Colors.black.withValues(alpha: 0.45),
+                        BlendMode.darken,
+                      )
+                    : const ColorFilter.mode(
+                        Colors.transparent,
+                        BlendMode.srcOver,
+                      ),
+                child: TileLayer(
+                  urlTemplate: getTileUrl(state.currentMapMode, isDarkMode),
+                  errorImage: const AssetImage(
+                    'assets/images/map_tile_error.png',
+                  ),
+                  tileProvider: CancellableNetworkTileProvider(),
+                  subdomains: const ['a', 'b', 'c', 'd'],
                 ),
-                tileProvider: CancellableNetworkTileProvider(),
-                subdomains: const ['a', 'b', 'c', 'd'],
               ),
               PolygonLayer(
                 polygons: buildPolygons(state),
@@ -105,9 +117,13 @@ class _MapPanelState extends ConsumerState<MapPanel>
             curve: Curves.easeInOutCubic,
             top: 24,
             right: rightOffset + 30,
-            child: MapThemeToggle(
-              isDarkMode: isDarkMode,
-              onToggle: toggleTheme,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MapLayerSwitcher(isDarkMode: isDarkMode),
+                const SizedBox(width: 12),
+                MapThemeToggle(isDarkMode: isDarkMode, onToggle: toggleTheme),
+              ],
             ),
           ),
 
@@ -115,8 +131,8 @@ class _MapPanelState extends ConsumerState<MapPanel>
           AnimatedPositioned(
             duration: moveDuration,
             curve: Curves.easeInOutCubic,
-            top: 30,
-            right: rightOffset + 94,
+            bottom: 20,
+            right: rightOffset + 3,
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 300),
               opacity: showZoomIndicator ? 1.0 : 0.0,
@@ -147,7 +163,7 @@ class _MapPanelState extends ConsumerState<MapPanel>
           AnimatedPositioned(
             duration: moveDuration,
             curve: Curves.easeInOutCubic,
-            bottom: 32,
+            bottom: 61,
             right: rightOffset,
             child: MapZoomControls(
               isDarkMode: isDarkMode,
@@ -169,15 +185,6 @@ class _MapPanelState extends ConsumerState<MapPanel>
               },
             ),
           ),
-
-          // Loading overlay
-          if (state.isLoading || isParsingProvinces || isParsingCommunes)
-            Container(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.8),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
-              ),
-            ),
         ],
       ),
     );
