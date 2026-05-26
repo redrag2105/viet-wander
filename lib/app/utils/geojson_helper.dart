@@ -150,6 +150,7 @@ class GeoJsonHelper {
 
     for (var feature in features) {
       final geometry = feature['geometry'];
+      if (geometry == null) continue;
       final type = geometry['type'];
       final coordinates = geometry['coordinates'] as List<dynamic>;
 
