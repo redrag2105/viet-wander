@@ -25,7 +25,7 @@ class EnvironmentModel extends Environment {
       description: weatherObj['description']?.toString() ?? 'Không rõ',
       iconCode: weatherObj['icon']?.toString() ?? '01d',
       rain1h: (weatherJson['rain']?['1h'] ?? 0).toDouble(),
-      aqi: (aqiJson['data']?['aqi'] ?? 0).toInt(),
+      aqi: (aqiJson['data'] is Map ? aqiJson['data']['aqi'] ?? 0 : 0).toInt(),
     );
   }
 }

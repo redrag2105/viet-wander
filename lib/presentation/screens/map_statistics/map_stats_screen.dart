@@ -35,16 +35,22 @@ class _MapStatsScreenState extends ConsumerState<MapStatsScreen>
         if (mounted) setState(() => _isMapReady = true);
       });
     });
+  }
 
-    _lottieController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+  Future<void> _playLoadingAnimation() async {
+    try {
+      await _lottieController.forward(from: 0.0).orCancel;
+
+      if (mounted) {
         if (_isMapReady) {
           setState(() => _shouldFadeOut = true);
         } else {
-          _lottieController.repeat();
+          _playLoadingAnimation();
         }
       }
-    });
+    } on TickerCanceled {
+      // The widget was disposed before the animation finished. Safe to ignore.
+    }
   }
 
   @override
@@ -119,7 +125,7 @@ class _MapStatsScreenState extends ConsumerState<MapStatsScreen>
                     controller: _lottieController,
                     onLoaded: (composition) {
                       _lottieController.duration = composition.duration;
-                      _lottieController.forward();
+                      _playLoadingAnimation();
                     },
                   ),
                 ),

@@ -23,6 +23,7 @@ class MapStatsController extends StateNotifier<MapStatsState> {
     await repo.initializeData();
 
     final allProvinces = repo.getAllProvinces();
+    if (!mounted) return;
 
     state = state.copyWith(
       isLoading: false,
