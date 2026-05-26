@@ -7,7 +7,9 @@ import 'package:viet_wander/data/providers/polygon_provider.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_controller.dart';
 import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_state.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/utils/map_animation_extension.dart';
-import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layer_builder.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/committee_layer.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/commune_layer.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/province_layer.dart';
 
 import 'map_controls.dart';
 import 'map_panel_logic.dart';
@@ -81,14 +83,10 @@ class _MapPanelState extends ConsumerState<MapPanel>
                 // polygonCulling: currentZoom >= 11,
               ),
               MarkerLayer(
-                markers: MapLayerBuilders.buildProvinceLabels(
-                  state,
-                  currentZoom,
-                  isDarkMode,
-                ),
+                markers: ProvinceLayer.build(state, currentZoom, isDarkMode),
               ),
               MarkerLayer(
-                markers: MapLayerBuilders.buildCommuneLabels(
+                markers: CommuneLayer.build(
                   state,
                   currentZoom,
                   isDarkMode,
@@ -97,11 +95,7 @@ class _MapPanelState extends ConsumerState<MapPanel>
                       .whenOrNull(data: (d) => d),
                 ),
               ),
-              MarkerLayer(
-                markers: MapLayerBuilders.buildCommitteeMarkers(
-                  state,
-                ), // Committee' Marker
-              ),
+              MarkerLayer(markers: CommitteeLayer.build(state)),
             ],
           ),
 

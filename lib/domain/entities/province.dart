@@ -13,6 +13,8 @@ class Province {
   final double centroidLat;
   final double centroidLon;
   final String searchKey;
+  final double hqLat;
+  final double hqLon;
 
   const Province({
     required this.id,
@@ -29,5 +31,7 @@ class Province {
     required this.centroidLat,
     required this.centroidLon,
     required this.searchKey,
+    required this.hqLat,
+    required this.hqLon,
   });
 }

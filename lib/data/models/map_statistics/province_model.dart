@@ -17,6 +17,8 @@ class ProvinceModel extends Province {
     required super.centroidLat,
     required super.centroidLon,
     required super.searchKey,
+    required super.hqLat,
+    required super.hqLon,
   });
 
   factory ProvinceModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,8 @@ class ProvinceModel extends Province {
       centroidLat: (json['centroid_lat'] ?? 0).toDouble(),
       centroidLon: (json['centroid_lon'] ?? 0).toDouble(),
       searchKey: TiengViet.parse(ten).toLowerCase(),
+      hqLat: (json['hq_lat'] ?? 0).toDouble(),
+      hqLon: (json['hq_lon'] ?? 0).toDouble(),
     );
   }
 }
