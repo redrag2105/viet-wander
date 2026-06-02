@@ -38,6 +38,7 @@ class _MapPanelState extends ConsumerState<MapPanel>
   void dispose() {
     disposeGestureControl();
     zoomTimer?.cancel();
+    mapController.dispose();
     super.dispose();
   }
 

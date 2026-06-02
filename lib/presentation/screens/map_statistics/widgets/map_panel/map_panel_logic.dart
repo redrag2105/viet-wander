@@ -40,9 +40,15 @@ mixin MapPanelLogic on ConsumerState<MapPanel>, MapGestureMixin {
   }
 
   void handleZoomChange(MapCamera camera, bool hasGesture) {
-    if (currentZoom != camera.zoom) {
+    if ((currentZoom - camera.zoom).abs() > 0.5) {
       setState(() => currentZoom = camera.zoom);
       if (hasGesture) triggerZoomIndicator();
+    } else if (currentZoom != camera.zoom) {
+      currentZoom = camera.zoom;
+      if (hasGesture) {
+        setState(() {});
+        triggerZoomIndicator();
+      }
     }
   }
 

@@ -65,8 +65,9 @@ mixin MapGestureMixin on ConsumerState<MapPanel> {
       final parentDir = Directory(currentDir).parent.path;
       final pythonServerDir =
           '$parentDir${Platform.pathSeparator}python_gesture_server';
-      final pythonExe =
-          '$pythonServerDir${Platform.pathSeparator}venv${Platform.pathSeparator}Scripts${Platform.pathSeparator}python.exe';
+      final pythonExe = Platform.isWindows
+          ? '$pythonServerDir${Platform.pathSeparator}venv${Platform.pathSeparator}Scripts${Platform.pathSeparator}python.exe'
+          : '$pythonServerDir${Platform.pathSeparator}venv${Platform.pathSeparator}bin${Platform.pathSeparator}python';
       final scriptPath = 'hand_server.py';
 
       debugPrint(">> Target Dir: $pythonServerDir");
@@ -80,6 +81,14 @@ mixin MapGestureMixin on ConsumerState<MapPanel> {
       );
 
       final Completer<void> serverReadyCompleter = Completer<void>();
+
+      _pythonProcess?.exitCode.then((code) {
+        if (!serverReadyCompleter.isCompleted) {
+          serverReadyCompleter.completeError(
+            Exception("Python process exited prematurely with code $code"),
+          );
+        }
+      });
 
       _pythonProcess?.stdout
           .transform(const Utf8Decoder(allowMalformed: true))
