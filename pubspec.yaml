@@ -44,6 +44,7 @@ dependencies:
   lottie: ^3.3.3
   flutter_map_cancellable_tile_provider: ^3.1.1
   dio: ^5.9.2
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
   flutter_test:

@@ -9,11 +9,13 @@ import 'package:viet_wander/presentation/controllers/map_statistics/map_stats_st
 import 'package:viet_wander/presentation/screens/map_statistics/utils/map_animation_extension.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/committee_layer.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/commune_layer.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/map_gesture_toggle.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/map_layer_switcher.dart';
 import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_layers/province_layer.dart';
-
-import 'map_controls.dart';
-import 'map_panel_logic.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_panel/map_controls.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_panel/map_gesture_mixin.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_panel/map_panel_logic.dart';
+import 'package:viet_wander/presentation/screens/map_statistics/widgets/map_panel/map_style_utils.dart';
 
 class MapPanel extends ConsumerStatefulWidget {
   final double rightMargin;
@@ -26,9 +28,15 @@ class MapPanel extends ConsumerStatefulWidget {
 }
 
 class _MapPanelState extends ConsumerState<MapPanel>
-    with TickerProviderStateMixin, MapPanelLogic {
+    with TickerProviderStateMixin, MapGestureMixin, MapPanelLogic {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   void dispose() {
+    disposeGestureControl();
     zoomTimer?.cancel();
     super.dispose();
   }
@@ -50,65 +58,77 @@ class _MapPanelState extends ConsumerState<MapPanel>
       borderRadius: BorderRadius.circular(16),
       child: Stack(
         children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              initialCenter: AppConfig.defaultMapCenter,
-              interactionOptions: const InteractionOptions(
-                scrollWheelVelocity: 0.0025,
-              ),
-              cameraConstraint: CameraConstraint.contain(
-                bounds: AppConfig.mapBounds,
-              ),
-              initialZoom: AppConfig.defaultMapZoom,
-              minZoom: 5.5,
-              maxZoom: state.currentMapMode == MapViewMode.minimal
-                  ? 16.0
-                  : 20.0,
-              onPositionChanged: handleZoomChange,
-              onTap: handleMapTap,
-            ),
-            children: [
-              ColorFiltered(
-                colorFilter:
-                    isDarkMode &&
-                        (state.currentMapMode == MapViewMode.satellite)
-                    ? ColorFilter.mode(
-                        Colors.black.withValues(alpha: 0.45),
-                        BlendMode.darken,
-                      )
-                    : const ColorFilter.mode(
-                        Colors.transparent,
-                        BlendMode.srcOver,
-                      ),
-                child: TileLayer(
-                  urlTemplate: getTileUrl(state.currentMapMode, isDarkMode),
-                  errorImage: const AssetImage(
-                    'assets/images/map_tile_error.png',
+          MouseRegion(
+            onHover: (_) => handleMouseInteraction(),
+            child: Listener(
+              onPointerDown: (_) => handleMouseInteraction(),
+              onPointerMove: (_) => handleMouseInteraction(),
+              onPointerSignal: (_) => handleMouseInteraction(),
+              child: FlutterMap(
+                mapController: mapController,
+                options: MapOptions(
+                  initialCenter: AppConfig.defaultMapCenter,
+                  interactionOptions: const InteractionOptions(
+                    scrollWheelVelocity: 0.0025,
                   ),
-                  tileProvider: CancellableNetworkTileProvider(),
-                  subdomains: const ['a', 'b', 'c', 'd'],
+                  cameraConstraint: CameraConstraint.contain(
+                    bounds: AppConfig.mapBounds,
+                  ),
+                  initialZoom: AppConfig.defaultMapZoom,
+                  minZoom: 5.5,
+                  maxZoom: state.currentMapMode == MapViewMode.minimal
+                      ? 16.0
+                      : 20.0,
+                  onPositionChanged: handleZoomChange,
+                  onTap: handleMapTap,
                 ),
+                children: [
+                  ColorFiltered(
+                    colorFilter:
+                        isDarkMode &&
+                            (state.currentMapMode == MapViewMode.satellite)
+                        ? ColorFilter.mode(
+                            Colors.black.withValues(alpha: 0.45),
+                            BlendMode.darken,
+                          )
+                        : const ColorFilter.mode(
+                            Colors.transparent,
+                            BlendMode.srcOver,
+                          ),
+                    child: TileLayer(
+                      urlTemplate: MapStyleUtils.getTileUrl(
+                        state.currentMapMode,
+                        isDarkMode,
+                      ),
+                      errorImage: const AssetImage(
+                        'assets/images/map_tile_error.png',
+                      ),
+                      tileProvider: CancellableNetworkTileProvider(),
+                      subdomains: const ['a', 'b', 'c', 'd'],
+                    ),
+                  ),
+                  PolygonLayer(polygons: buildPolygons(state)),
+                  MarkerLayer(
+                    markers: ProvinceLayer.build(
+                      state,
+                      currentZoom,
+                      isDarkMode,
+                    ),
+                  ),
+                  MarkerLayer(
+                    markers: CommuneLayer.build(
+                      state,
+                      currentZoom,
+                      isDarkMode,
+                      ref
+                          .watch(communeBasePolygonProvider)
+                          .whenOrNull(data: (d) => d),
+                    ),
+                  ),
+                  MarkerLayer(markers: CommitteeLayer.build(state)),
+                ],
               ),
-              PolygonLayer(
-                polygons: buildPolygons(state),
-                // polygonCulling: currentZoom >= 11,
-              ),
-              MarkerLayer(
-                markers: ProvinceLayer.build(state, currentZoom, isDarkMode),
-              ),
-              MarkerLayer(
-                markers: CommuneLayer.build(
-                  state,
-                  currentZoom,
-                  isDarkMode,
-                  ref
-                      .watch(communeBasePolygonProvider)
-                      .whenOrNull(data: (d) => d),
-                ),
-              ),
-              MarkerLayer(markers: CommitteeLayer.build(state)),
-            ],
+            ),
           ),
 
           // Buttons overlay
@@ -120,6 +140,14 @@ class _MapPanelState extends ConsumerState<MapPanel>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                MapGestureToggle(
+                  isDarkMode: isDarkMode,
+                  isActive: isGestureModeActive,
+                  isMouseOverriding: isMouseOverriding,
+                  onToggle: toggleGestureMode,
+                  isLoading: isGestureStarting,
+                ),
+                const SizedBox(width: 12),
                 MapLayerSwitcher(isDarkMode: isDarkMode),
                 const SizedBox(width: 12),
                 MapThemeToggle(isDarkMode: isDarkMode, onToggle: toggleTheme),
@@ -146,12 +174,12 @@ class _MapPanelState extends ConsumerState<MapPanel>
                     Shadow(
                       color: isDarkMode ? Colors.white70 : Colors.black87,
                       blurRadius: 12,
-                      offset: Offset(2, 2),
+                      offset: const Offset(2, 2),
                     ),
                     Shadow(
                       color: isDarkMode ? Colors.white : Colors.black,
                       blurRadius: 16,
-                      offset: Offset(0, 0),
+                      offset: const Offset(0, 0),
                     ),
                   ],
                 ),
@@ -185,6 +213,51 @@ class _MapPanelState extends ConsumerState<MapPanel>
               },
             ),
           ),
+
+          // VIRTUAL CURSOR
+          if (cursorState != 'HIDDEN' && virtualCursor != null)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 30),
+              left: virtualCursor!.dx - 24,
+              top: virtualCursor!.dy - 24,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 150),
+                  opacity: cursorState == 'CLUTCHING' ? 0.3 : 1.0,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.8),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.white, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
